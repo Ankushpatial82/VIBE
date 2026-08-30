@@ -6,18 +6,20 @@
 
 **A Next-Generation Social Music Discovery, Live Karaoke Synced Lyrics & Streaming Web Platform.**
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-7c3aed?style=for-the-badge&logo=vercel&logoColor=white)](https://web-gilt-three-60.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-7c3aed?style=for-the-badge&logo=vercel&logoColor=white)](https://ankush-vibe.vercel.app)
 [![Framework](https://img.shields.io/badge/Next.js_16-Turbopack-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Language](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Styling](https://img.shields.io/badge/Tailwind_CSS-Modern_Dark_UI-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![PWA](https://img.shields.io/badge/PWA_Ready-Mobile_&_Desktop-FF5722?style=for-the-badge&logo=pwa&logoColor=white)](https://web-gilt-three-60.vercel.app)
+[![PWA](https://img.shields.io/badge/PWA_Ready-Mobile_&_Desktop-FF5722?style=for-the-badge&logo=pwa&logoColor=white)](https://ankush-vibe.vercel.app)
 
 </div>
 
 ---
 
 ## 🌟 Live Deployment URL
-👉 **Production URL**: **[https://web-gilt-three-60.vercel.app](https://web-gilt-three-60.vercel.app)**
+👉 **Production URL**: **[https://ankush-vibe.vercel.app](https://ankush-vibe.vercel.app)**
+- Alternative: [https://vibe-by-ankush.vercel.app](https://vibe-by-ankush.vercel.app)
+- Alternative: [https://ankushpatial-vibe.vercel.app](https://ankushpatial-vibe.vercel.app)
 
 ---
 
