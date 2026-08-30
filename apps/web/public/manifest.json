@@ -1,0 +1,45 @@
+{
+  "name": "VIBE — Sound, Social & AI Music",
+  "short_name": "VIBE",
+  "description": "Stream unlimited full-length tracks, explore AI music vibes, and join live synchronized listening rooms.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08080c",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["music", "entertainment", "social"],
+  "shortcuts": [
+    {
+      "name": "Explore Hits",
+      "short_name": "Explore",
+      "url": "/?tab=explore",
+      "description": "Explore global trending songs"
+    },
+    {
+      "name": "VIBE AI DJ",
+      "short_name": "AI DJ",
+      "url": "/?tab=aivibe",
+      "description": "Ask AI to generate custom playlists"
+    }
+  ]
+}
