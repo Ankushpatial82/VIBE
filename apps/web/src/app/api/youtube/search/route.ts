@@ -1,8 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
-// @ts-ignore
-import ytSearch from 'yt-search';
 
 export const dynamic = 'force-dynamic';
+
+async function searchInnerTube(query: string) {
+  const res = await fetch('https://www.youtube.com/youtubei/v1/search', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    },
+    body: JSON.stringify({
+      context: {
+        client: {
+          clientName: 'WEB',
+          clientVersion: '2.20240101.00.00',
+          hl: 'en',
+          gl: 'IN',
+        },
+      },
+      query,
+    }),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const contents = data?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
+
+  if (contents && Array.isArray(contents)) {
+    for (const section of contents) {
+      const items = section?.itemSectionRenderer?.contents;
+      if (items && Array.isArray(items)) {
+        for (const item of items) {
+          const v = item?.videoRenderer;
+          if (v && v.videoId) {
+            const title = v.title?.runs?.[0]?.text || '';
+            const lengthText = v.lengthText?.simpleText || '';
+            let duration = 210;
+            if (lengthText) {
+              const parts = lengthText.split(':').map(Number);
+              if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                duration = parts[0] * 60 + parts[1];
+              } else if (parts.length === 3) {
+                duration = parts[0] * 3600 + parts[1] * 60 + parts[2];
+              }
+            }
+            return {
+              videoId: v.videoId,
+              title,
+              duration,
+              author: v.ownerText?.runs?.[0]?.text || v.shortBylineText?.runs?.[0]?.text || '',
+              thumbnail: v.thumbnail?.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+            };
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,64 +70,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Query parameter q required' }, { status: 400 });
     }
 
-    // Try ytSearch first
-    try {
-      const r = await ytSearch(query);
-      if (r && r.videos && r.videos.length > 0) {
-        const video = r.videos[0];
-        return NextResponse.json({
-          videoId: video.videoId,
-          title: video.title,
-          duration: video.seconds,
-          author: video.author?.name,
-          thumbnail: video.thumbnail,
-        });
-      }
-    } catch (err) {
-      console.warn('ytSearch failed, falling back to alternatives...', err);
+    // 1. Try direct search query
+    let result = await searchInnerTube(query);
+
+    // 2. If not found, try appending "audio"
+    if (!result && !query.toLowerCase().includes('audio')) {
+      result = await searchInnerTube(`${query} audio`);
     }
 
-    // Fallback 1: Piped API
-    try {
-      const res = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=all`);
-      if (res.ok) {
-        const data = await res.json();
-        const video = data.items?.find((item: any) => item.type === 'stream');
-        if (video) {
-          return NextResponse.json({
-            videoId: video.url.split('?v=')[1] || video.url.split('/watch?v=')[1],
-            title: video.title,
-            duration: video.duration,
-            author: video.uploaderName,
-            thumbnail: video.thumbnail,
-          });
-        }
-      }
-    } catch (err) {
-      console.warn('Piped API fallback failed...', err);
+    // 3. If still not found, try appending "song"
+    if (!result && !query.toLowerCase().includes('song')) {
+      result = await searchInnerTube(`${query} song`);
     }
 
-    // Fallback 2: Invidious API
-    try {
-      const res = await fetch(`https://invidious.nerdvpn.de/api/v1/search?q=${encodeURIComponent(query)}`);
-      if (res.ok) {
-        const data = await res.json();
-        const video = data.find((item: any) => item.type === 'video');
-        if (video) {
-          return NextResponse.json({
-            videoId: video.videoId,
-            title: video.title,
-            duration: video.lengthSeconds,
-            author: video.author,
-            thumbnail: video.videoThumbnails?.[0]?.url,
-          });
-        }
-      }
-    } catch (err) {
-      console.warn('Invidious API fallback failed...', err);
+    if (result) {
+      return NextResponse.json(result);
     }
 
-    return NextResponse.json({ error: 'No video found across all providers' }, { status: 404 });
+    return NextResponse.json({ error: 'No video found' }, { status: 404 });
   } catch (err: any) {
     console.error('YouTube search error:', err);
     return NextResponse.json({ error: 'Search failed', message: err.message }, { status: 500 });

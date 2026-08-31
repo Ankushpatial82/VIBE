@@ -76,8 +76,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if ((window as any).YT && (window as any).YT.Player) {
         try {
           ytPlayerRef.current = new (window as any).YT.Player('vibe-yt-player', {
-            height: '1',
-            width: '1',
+            height: '200',
+            width: '200',
             videoId: currentSong?.youtubeId || 'QYvfY4MtLAI',
             playerVars: {
               autoplay: 0,
@@ -88,6 +88,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               modestbranding: 1,
               playsinline: 1,
               rel: 0,
+              enablejsapi: 1,
               origin: typeof window !== 'undefined' ? window.location.origin : '',
             },
             events: {
@@ -102,16 +103,35 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                   setIsPlaying(true);
                   activeEngineRef.current = 'youtube';
                   const d = event.target.getDuration();
-                  if (d && !isNaN(d)) setDuration(d);
+                  if (d && !isNaN(d) && d > 30) setDuration(d);
                 } else if (state === 2) {
                   setIsPlaying(false);
                 } else if (state === 0) {
                   handleTrackEnd();
                 }
               },
-              onError: (err: any) => {
-                console.warn('YouTube playback error, switching to HTML5 audio fallback:', err);
-                if (currentSong && audioRef.current) {
+              onError: async (err: any) => {
+                console.warn('YouTube playback error code:', err?.data, 'Searching alternate audio/lyrics version...');
+                // If embed restricted (101 or 150), try searching with "lyrics"
+                if (currentSong && (err?.data === 150 || err?.data === 101 || err?.data === 2)) {
+                  try {
+                    const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(`${currentSong.title} ${currentSong.artistName} lyrics`)}`);
+                    if (res.ok) {
+                      const data = await res.json();
+                      if (data.videoId && data.videoId !== currentSong.youtubeId && ytPlayerRef.current) {
+                        currentSong.youtubeId = data.videoId;
+                        ytPlayerRef.current.loadVideoById(data.videoId, 0);
+                        ytPlayerRef.current.playVideo();
+                        return;
+                      }
+                    }
+                  } catch (e) {
+                    console.warn('Alternate YT search failed:', e);
+                  }
+                }
+                
+                // Fallback to HTML5 audio only as last resort
+                if (currentSong && audioRef.current && currentSong.audioUrl) {
                   activeEngineRef.current = 'audio';
                   audioRef.current.src = currentSong.audioUrl;
                   audioRef.current.play().catch(() => {});
@@ -149,19 +169,21 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             const cur = ytPlayerRef.current.getCurrentTime();
             const dur = ytPlayerRef.current.getDuration();
             if (cur !== undefined && !isNaN(cur)) setCurrentTime(cur);
-            if (dur !== undefined && !isNaN(dur) && dur > 0) setDuration(dur);
+            if (dur !== undefined && !isNaN(dur) && dur > 30) setDuration(dur);
           }
         } catch {}
       } else if (activeEngineRef.current === 'audio' && audioRef.current && isPlaying) {
         if (audioRef.current.duration && !isNaN(audioRef.current.duration)) {
           setCurrentTime(audioRef.current.currentTime);
-          setDuration(audioRef.current.duration);
+          if (duration <= 30 && audioRef.current.duration > 0) {
+            setDuration(audioRef.current.duration);
+          }
         }
       }
     }, 250);
 
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, duration]);
 
   // Initialize HTML5 Audio Element as Fallback
   useEffect(() => {
@@ -173,7 +195,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const handleTimeUpdate = () => {
       if (activeEngineRef.current === 'audio' && audio.duration && !isNaN(audio.duration)) {
         setCurrentTime(audio.currentTime);
-        setDuration(audio.duration);
       }
     };
 
@@ -208,7 +229,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     setCurrentSong(song);
     setCurrentTime(0);
-    setDuration(song.duration || 240);
+    // Use song duration if available, otherwise default to standard ~3.5 min
+    const initialDur = song.duration && song.duration > 30 ? song.duration : 210;
+    setDuration(initialDur);
     setIsPlaying(true);
 
     if (playlistContext) {
@@ -227,14 +250,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     if (!targetYtId) {
       try {
-        const query = `${song.title} ${song.artistName} audio`;
+        const query = `${song.title} ${song.artistName}`;
         const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.videoId) {
             targetYtId = data.videoId;
             song.youtubeId = data.videoId;
-            if (data.duration) setDuration(data.duration);
+            if (data.duration && data.duration > 30) setDuration(data.duration);
           }
         }
       } catch (err) {
@@ -242,18 +265,31 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     }
 
-    if (targetYtId && ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
-      try {
-        activeEngineRef.current = 'youtube';
-        ytPlayerRef.current.loadVideoById(targetYtId, 0);
-        ytPlayerRef.current.playVideo();
-        return;
-      } catch (e) {
-        console.warn('Error loading YT video:', e);
+    // Check YouTube player readiness
+    const attemptYTPlay = (ytId: string, retries = 5) => {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+        try {
+          activeEngineRef.current = 'youtube';
+          ytPlayerRef.current.loadVideoById(ytId, 0);
+          ytPlayerRef.current.playVideo();
+          return true;
+        } catch (e) {
+          console.warn('Error loading YT video:', e);
+        }
       }
+      if (retries > 0) {
+        setTimeout(() => attemptYTPlay(ytId, retries - 1), 300);
+        return true;
+      }
+      return false;
+    };
+
+    if (targetYtId) {
+      const handled = attemptYTPlay(targetYtId);
+      if (handled) return;
     }
 
-    // Fallback to HTML5 audio if YouTube unavailable
+    // Fallback to HTML5 audio only if YouTube ID could not be found
     if (audioRef.current && song.audioUrl) {
       activeEngineRef.current = 'audio';
       audioRef.current.src = song.audioUrl;
@@ -444,18 +480,20 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }}
     >
       <div
-        id="vibe-yt-player"
         style={{
           position: 'fixed',
-          top: '-9999px',
-          left: '-9999px',
-          width: '1px',
-          height: '1px',
-          opacity: 0,
+          bottom: '0',
+          right: '0',
+          width: '200px',
+          height: '200px',
+          opacity: '0.0001',
           pointerEvents: 'none',
           zIndex: -1,
+          overflow: 'hidden',
         }}
-      />
+      >
+        <div id="vibe-yt-player" />
+      </div>
       {children}
     </PlayerContext.Provider>
   );
