@@ -22,6 +22,8 @@ interface AuthContextType {
   setSelectedMood: (mood: MoodType | null) => void;
   completeOnboarding: (genres: string[], moods: string[], languages: string[]) => void;
   updateProfile: (updated: Partial<UserProfile>) => void;
+  login: (userData: { name: string; email: string; avatarUrl: string }) => void;
+  logout: () => void;
   joinRoom: (roomId: string) => void;
   leaveRoom: () => void;
   sendRoomMessage: (text: string) => void;
@@ -46,16 +48,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<UserProfile>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('vibe_user_profile');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {}
-      }
+      if (saved) { try { return JSON.parse(saved); } catch {} }
     }
     return MOCK_CURRENT_USER;
   });
 
-  const [isAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('vibe_logged_in');
+    }
+    return false;
+  });
+
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(true);
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   const [rooms, setRooms] = useState<ListeningRoom[]>(MOCK_ROOMS);
@@ -80,6 +84,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return nextUser;
     });
+  };
+
+  const login = (userData: { name: string; email: string; avatarUrl: string }) => {
+    const updatedUser = { ...MOCK_CURRENT_USER, name: userData.name, avatarUrl: userData.avatarUrl, bio: `@${userData.name.toLowerCase().replace(/\s+/g, '')}` };
+    setUser(updatedUser);
+    localStorage.setItem('vibe_user_profile', JSON.stringify(updatedUser));
+    setIsAuthenticated(true);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('vibe_logged_in');
+    localStorage.removeItem('vibe_user_profile');
+    setIsAuthenticated(false);
+    setUser(MOCK_CURRENT_USER);
   };
 
   const completeOnboarding = (genres: string[], moods: string[], languages: string[]) => {
@@ -165,6 +183,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSelectedMood,
         completeOnboarding,
         updateProfile,
+        login,
+        logout,
         joinRoom,
         leaveRoom,
         sendRoomMessage,

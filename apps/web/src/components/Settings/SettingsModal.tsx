@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Shield, Sliders, Bell, Moon, User } from 'lucide-react';
+import { X, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const SettingsModal: React.FC = () => {
-  const { isSettingsOpen, setSettingsOpen, user } = useAuth();
+  const { isSettingsOpen, setSettingsOpen, user, logout } = useAuth();
   const [crossfade, setCrossfade] = useState(true);
   const [highQuality, setHighQuality] = useState(true);
   const [activityVisible, setActivityVisible] = useState(true);
@@ -71,6 +71,15 @@ export const SettingsModal: React.FC = () => {
           className="w-full py-3 rounded-2xl vibe-gradient-primary text-white font-bold text-xs"
         >
           Save Preferences
+        </button>
+
+        {/* Logout Button */}
+        <button
+          onClick={() => { setSettingsOpen(false); logout(); }}
+          className="w-full py-3 rounded-2xl bg-red-600/15 border border-red-500/30 text-red-400 hover:bg-red-600/25 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out ({user.name})
         </button>
       </div>
     </div>

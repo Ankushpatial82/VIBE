@@ -27,11 +27,17 @@ import { SettingsModal } from '../components/Settings/SettingsModal';
 import { PremiumModal } from '../components/Premium/PremiumModal';
 import { EditProfileModal } from '../components/Social/EditProfileModal';
 import { InstallPwaPrompt } from '../components/Navigation/InstallPwaPrompt';
+import { AuthScreen } from '../components/Auth/AuthScreen';
 
 function VibeApp() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [showSplash, setShowSplash] = useState(true);
-  const { selectedArtistId } = useAuth();
+  const { selectedArtistId, isAuthenticated, login } = useAuth();
+
+  // Show auth screen if not logged in
+  if (!isAuthenticated) {
+    return <AuthScreen onLogin={login} />;
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#08080c] text-white">
@@ -98,3 +104,4 @@ export default function Page() {
     </AuthProvider>
   );
 }
+
