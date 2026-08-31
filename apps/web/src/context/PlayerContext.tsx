@@ -227,7 +227,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     if (!targetYtId) {
       try {
-        const query = `${song.title} ${song.artistName}`;
+        const query = `${song.title} ${song.artistName} audio`;
         const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`);
         if (res.ok) {
           const data = await res.json();
