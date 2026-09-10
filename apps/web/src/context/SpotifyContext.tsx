@@ -27,25 +27,22 @@ const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || 'f0fa2d05
 const REDIRECT_URI = typeof window !== 'undefined' ? `${window.location.origin}/spotify-callback` : 'http://localhost:3000/spotify-callback';
 
 export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [spotifyToken, setSpotifyToken] = useState<string | null>(null);
-  const [spotifyUser, setSpotifyUser] = useState<SpotifyUser | null>(null);
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    // Check saved session in localStorage
-    const savedToken = localStorage.getItem('vibe_spotify_token');
-    const savedUser = localStorage.getItem('vibe_spotify_user');
-    if (savedToken) {
-      setSpotifyToken(savedToken);
-      if (savedUser) {
-        try {
-          setSpotifyUser(JSON.parse(savedUser));
-        } catch {
-          // ignore
-        }
-      }
+  // Initialise Spotify token and user lazily from localStorage
+  const [spotifyToken, setSpotifyToken] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vibe_spotify_token');
     }
-  }, []);
+    return null;
+  });
+  const [spotifyUser, setSpotifyUser] = useState<SpotifyUser | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vibe_spotify_user');
+      return saved ? JSON.parse(saved) : null;
+    }
+    return null;
+  });
 
   const connectSpotify = () => {
     const scopes = [

@@ -70,18 +70,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Query parameter q required' }, { status: 400 });
     }
 
-    // 1. Try direct search query
-    let result = await searchInnerTube(query);
+    const attempts: (string | null)[] = [
+      query,
+      query.toLowerCase().includes('audio') ? null : `${query} audio`,
+      query.toLowerCase().includes('song') ? null : `${query} song`,
+    ].filter(Boolean) as string[];
 
-    // 2. If not found, try appending "audio"
-    if (!result && !query.toLowerCase().includes('audio')) {
-      result = await searchInnerTube(`${query} audio`);
-    }
-
-    // 3. If still not found, try appending "song"
-    if (!result && !query.toLowerCase().includes('song')) {
-      result = await searchInnerTube(`${query} song`);
-    }
+    const promises = attempts.map((q) => searchInnerTube(q));
+    const results = await Promise.all(promises);
+    const result = results.find((r) => r !== null);
 
     if (result) {
       return NextResponse.json(result);

@@ -47,6 +47,12 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="VIBE" />
+        {/* Google AdSense — Replace ca-pub-XXXXXXXXXXXXXXXXXX with your real Publisher ID */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9635350634165581"
+          crossOrigin="anonymous"
+        />
       </head>
       <body className="h-full w-full bg-[#08080c] text-slate-100 overflow-hidden select-none">
         {children}

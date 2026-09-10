@@ -6,6 +6,7 @@ import { usePlayer } from '../../context/PlayerContext';
 import { useAuth } from '../../context/AuthContext';
 import { MOCK_SONGS, MOCK_PLAYLISTS, MOCK_ARTISTS } from '../../data/mockData';
 import { MoodType, Song } from '../../types/music';
+import { AdBanner } from '../Ads/AdBanner';
 
 const QUICK_MOODS: { mood: MoodType; emoji: string; color: string; query: string }[] = [
   { mood: 'Chill', emoji: '☕', color: 'from-blue-600/30 to-indigo-600/30', query: 'Top Chill Lo-Fi Acoustic' },
@@ -174,6 +175,9 @@ export const HomeScreen: React.FC = () => {
         </div>
       </div>
 
+      {/* 📢 Ad Banner — after hero, before playlists */}
+      <AdBanner format="inline" adSlot="1111111111" className="my-1" />
+
       {/* Made For You (Curated Playlists) */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -308,6 +312,9 @@ export const HomeScreen: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* 📢 Ad Banner — between songs and artists */}
+      <AdBanner format="banner" adSlot="2222222222" className="my-1" />
 
       {/* Recommended Verified Artists */}
       <div className="flex flex-col gap-4">

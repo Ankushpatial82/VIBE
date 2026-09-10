@@ -57,7 +57,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isQueueOpen, setQueueOpen] = useState<boolean>(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const ytPlayerRef = useRef<any>(null);
+  const ytPlayerRef = useRef<YT.Player | null>(null);
+  const handleTrackEndRef = useRef<() => void>(() => {});
   const [isYtReady, setIsYtReady] = useState(false);
   const activeEngineRef = useRef<'youtube' | 'audio'>('youtube');
 
@@ -65,7 +66,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    if (!(window as any).YT) {
+    if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -73,9 +74,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     const initYT = () => {
-      if ((window as any).YT && (window as any).YT.Player) {
+      if (window.YT && window.YT.Player) {
         try {
-          ytPlayerRef.current = new (window as any).YT.Player('vibe-yt-player', {
+          ytPlayerRef.current = new window.YT.Player('vibe-yt-player', {
             height: '200',
             width: '200',
             videoId: currentSong?.youtubeId || 'QYvfY4MtLAI',
@@ -92,11 +93,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               origin: typeof window !== 'undefined' ? window.location.origin : '',
             },
             events: {
-              onReady: (event: any) => {
+              onReady: (event: YT.PlayerEvent) => {
                 setIsYtReady(true);
                 event.target.setVolume(Math.round(volume * 100));
               },
-              onStateChange: (event: any) => {
+              onStateChange: (event: YT.PlayerEvent) => {
                 const state = event.data;
                 // 1 = PLAYING, 2 = PAUSED, 0 = ENDED, 3 = BUFFERING
                 if (state === 1) {
@@ -107,10 +108,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 } else if (state === 2) {
                   setIsPlaying(false);
                 } else if (state === 0) {
-                  handleTrackEnd();
+                  handleTrackEndRef.current();
                 }
               },
-              onError: async (err: any) => {
+              onError: async (err: YT.PlayerEvent) => {
                 console.warn('YouTube playback error code:', err?.data, 'Searching alternate audio/lyrics version...');
                 // If embed restricted (101 or 150), try searching with "lyrics"
                 if (currentSong && (err?.data === 150 || err?.data === 101 || err?.data === 2)) {
@@ -145,10 +146,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     };
 
-    if ((window as any).YT && (window as any).YT.Player) {
+    if (window.YT && window.YT.Player) {
       initYT();
     } else {
-      (window as any).onYouTubeIframeAPIReady = initYT;
+      window.onYouTubeIframeAPIReady = initYT;
     }
 
     return () => {
@@ -200,7 +201,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const handleEnded = () => {
       if (activeEngineRef.current === 'audio') {
-        handleTrackEnd();
+        handleTrackEndRef.current();
       }
     };
 
@@ -213,15 +214,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       audio.removeEventListener('ended', handleEnded);
     };
   }, []);
-
-  const handleTrackEnd = () => {
-    if (repeatMode === 'one') {
-      seek(0);
-      resume();
-      return;
-    }
-    nextTrack();
-  };
 
   const playSong = async (song: Song, playlistContext?: Song[]) => {
     if (currentSong) {
@@ -266,7 +258,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     // Check YouTube player readiness
-    const attemptYTPlay = (ytId: string, retries = 5) => {
+    const attemptYTPlay = async (ytId: string, retries = 5): Promise<boolean> => {
       if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
         try {
           activeEngineRef.current = 'youtube';
@@ -278,14 +270,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       }
       if (retries > 0) {
-        setTimeout(() => attemptYTPlay(ytId, retries - 1), 300);
-        return true;
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        return attemptYTPlay(ytId, retries - 1);
       }
       return false;
     };
 
     if (targetYtId) {
-      const handled = attemptYTPlay(targetYtId);
+      const handled = await attemptYTPlay(targetYtId);
       if (handled) return;
     }
 
@@ -442,6 +434,20 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addToQueue = (song: Song) => {
     setQueue((prev) => [...prev, song]);
   };
+
+  const handleTrackEnd = () => {
+    if (repeatMode === 'one') {
+      seek(0);
+      resume();
+      return;
+    }
+    nextTrack();
+  };
+
+  // Update ref to avoid stale closures and TDZ
+  useEffect(() => {
+    handleTrackEndRef.current = handleTrackEnd;
+  });
 
   return (
     <PlayerContext.Provider
