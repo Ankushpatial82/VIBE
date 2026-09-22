@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,22 +15,33 @@ export async function POST(req: NextRequest) {
     const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    // If live/test credentials exist, create order via Razorpay API
+    // If live/test credentials exist, create order via Razorpay REST API
     if (keyId && keySecret && !keyId.includes('placeholder')) {
-      const razorpay = new Razorpay({
-        key_id: keyId,
-        key_secret: keySecret,
+      const credentials = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+
+      const response = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Basic ${credentials}`,
+        },
+        body: JSON.stringify({
+          amount: Math.round(amount * 100), // convert to paise (₹29 → 2900)
+          currency: 'INR',
+          receipt: `vibe_rcpt_${Date.now()}`,
+          notes: {
+            planId: planId || 'vip_monthly',
+            planName: planName || 'VIBE VIP',
+          },
+        }),
       });
 
-      const order = await razorpay.orders.create({
-        amount: Math.round(amount * 100), // convert to paise (₹29 -> 2900)
-        currency: 'INR',
-        receipt: `vibe_rcpt_${Date.now()}`,
-        notes: {
-          planId: planId || 'vip_monthly',
-          planName: planName || 'VIBE VIP',
-        },
-      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err?.error?.description || 'Razorpay order creation failed');
+      }
+
+      const order = await response.json();
 
       return NextResponse.json({
         success: true,
@@ -43,7 +53,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Sandbox testing mode (allows immediate preview and testing)
+    // Sandbox / no-credentials fallback
     const mockOrderId = `order_sim_${Date.now()}`;
     return NextResponse.json({
       success: true,
