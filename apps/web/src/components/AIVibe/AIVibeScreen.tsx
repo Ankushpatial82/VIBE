@@ -129,7 +129,7 @@ export const AIVibeScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-4xl mx-auto w-full px-4 sm:px-6 pb-2 select-none">
+    <div className="flex flex-col min-h-[calc(100vh-10rem)] max-w-4xl mx-auto w-full px-4 sm:px-6 pb-2 select-none">
       {/* Top Banner */}
       <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">

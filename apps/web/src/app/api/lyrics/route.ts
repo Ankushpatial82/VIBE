@@ -51,8 +51,9 @@ export async function GET(req: NextRequest) {
     let url = `https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanTitle)}&artist_name=${encodeURIComponent(cleanArtist)}`;
     let res = await fetch(url, {
       headers: { 'User-Agent': 'VIBE-Music-App (https://vibe.app)' },
-      next: { revalidate: 3600 },
-    });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...(({ next: { revalidate: 3600 } }) as any),
+    } as RequestInit);
 
     if (res.ok) {
       const data = await res.json();
@@ -68,8 +69,9 @@ export async function GET(req: NextRequest) {
     const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(`${cleanTitle} ${cleanArtist}`)}`;
     const searchRes = await fetch(searchUrl, {
       headers: { 'User-Agent': 'VIBE-Music-App (https://vibe.app)' },
-      next: { revalidate: 3600 },
-    });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...(({ next: { revalidate: 3600 } }) as any),
+    } as RequestInit);
 
     if (searchRes.ok) {
       const results = await searchRes.json();

@@ -22,7 +22,7 @@ export const ActiveRoomView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 pb-32 pt-2 px-4 sm:px-8 max-w-7xl mx-auto w-full h-[calc(100vh-10rem)] select-none">
+    <div className="flex flex-col lg:flex-row gap-6 pb-32 pt-2 px-4 sm:px-8 max-w-7xl mx-auto w-full min-h-[calc(100vh-10rem)] select-none">
       {/* Left Area: Room Stage & Synced Playback */}
       <div className="flex-1 flex flex-col justify-between bg-[#11111a] border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
         {/* Background glow */}

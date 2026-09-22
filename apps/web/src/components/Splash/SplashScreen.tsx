@@ -10,18 +10,29 @@ interface SplashScreenProps {
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   const [fade, setFade] = useState(false);
 
+  const onFinishRef = React.useRef(onFinish);
+  onFinishRef.current = onFinish;
+
+  const dismiss = () => {
+    setFade(true);
+    setTimeout(() => onFinishRef.current(), 150);
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFade(true);
-      setTimeout(() => onFinish(), 250);
-    }, 600);
+      dismiss();
+    }, 450);
 
     return () => clearTimeout(timer);
-  }, [onFinish]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
-      className={`fixed inset-0 z-50 bg-[#07070b] flex flex-col items-center justify-center transition-opacity duration-500 ${
+      onClick={dismiss}
+      role="button"
+      tabIndex={0}
+      className={`fixed inset-0 z-50 bg-[#07070b] flex flex-col items-center justify-center transition-opacity duration-300 cursor-pointer ${
         fade ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >

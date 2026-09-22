@@ -9,7 +9,6 @@ import { MobileNav } from '../components/Navigation/MobileNav';
 import { Header } from '../components/Navigation/Header';
 import { BottomPlayer } from '../components/Player/BottomPlayer';
 import { FullScreenPlayer } from '../components/Player/FullScreenPlayer';
-import { SplashScreen } from '../components/Splash/SplashScreen';
 import { OnboardingModal } from '../components/Onboarding/OnboardingModal';
 import { HomeScreen } from '../components/Home/HomeScreen';
 import { SearchScreen } from '../components/Search/SearchScreen';
@@ -31,7 +30,6 @@ import { AuthScreen } from '../components/Auth/AuthScreen';
 
 function VibeApp() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
-  const [showSplash, setShowSplash] = useState(true);
   const { selectedArtistId, isAuthenticated, login } = useAuth();
 
   // Show auth screen if not logged in
@@ -41,9 +39,6 @@ function VibeApp() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#08080c] text-white">
-      {/* Animated Splash Screen */}
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
-
       {/* Onboarding Wizard */}
       <OnboardingModal />
 
@@ -51,10 +46,10 @@ function VibeApp() {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main View Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 h-full overflow-hidden">
         <Header setActiveTab={setActiveTab} />
 
-        <main className="flex-1 overflow-y-auto pt-6 scrollbar-none">
+        <main id="main-scroll-container" className="flex-1 min-h-0 overflow-y-auto pt-6 pb-36 md:pb-28">
           {selectedArtistId ? (
             <ArtistView />
           ) : (

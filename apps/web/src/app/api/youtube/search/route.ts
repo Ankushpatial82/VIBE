@@ -70,11 +70,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Query parameter q required' }, { status: 400 });
     }
 
-    const attempts: (string | null)[] = [
+    const attempts: string[] = [
       query,
       query.toLowerCase().includes('audio') ? null : `${query} audio`,
       query.toLowerCase().includes('song') ? null : `${query} song`,
-    ].filter(Boolean) as string[];
+    ].filter((q): q is string => q !== null);
 
     const promises = attempts.map((q) => searchInnerTube(q));
     const results = await Promise.all(promises);

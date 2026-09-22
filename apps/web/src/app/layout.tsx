@@ -54,7 +54,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="h-full w-full bg-[#08080c] text-slate-100 overflow-hidden select-none">
+      <body className="h-full w-full bg-[#08080c] text-slate-100 antialiased">
         {children}
         <script
           dangerouslySetInnerHTML={{
